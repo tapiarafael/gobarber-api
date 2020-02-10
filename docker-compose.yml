@@ -1,22 +1,47 @@
 version: "3.4"
 
 services:
+  traefik:
+    container_name: traefik
+    command:
+      - --api.insecure
+      - --providers.docker
+      - --providers.docker.exposedByDefault=false
+    image: traefik:v2.0.2
+    ports:
+      - "80:80"
+      - "8080:8080"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`dashboard.gobarber.localhost`)
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   postgres:
-    container_name: postgres
+    container_name: postgres-gobarber
     image: postgres:12.1-alpine
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.postgres.rule=Host(`postgres.gobarber.localhost`)
+      - traefik.http.services.postgres.loadbalancer.server.port=5432
     ports:
       - "5431:5432"
     environment:
       - POSTGRES_PASSWORD=docker
 
   mongo:
-    container_name: mongo
+    container_name: mongo-gobarber
     image: mongo
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.mongo.rule=Host(`mongo.gobarber.localhost`)
+      - traefik.http.services.mongo.loadbalancer.server.port=27017
     ports:
       - "27017:27017"
 
   redis:
-    container_name: redisdb
+    container_name: redisdb-gobarber
     image: redis:alpine
     ports:
       - "6379:6379"
