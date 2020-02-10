@@ -1,0 +1,22 @@
+version: "3.4"
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:12.1-alpine
+    ports:
+      - "5431:5432"
+    environment:
+      - POSTGRES_PASSWORD=docker
+
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - "27017:27017"
+
+  redis:
+    container_name: redisdb
+    image: redis:alpine
+    ports:
+      - "6379:6379"
