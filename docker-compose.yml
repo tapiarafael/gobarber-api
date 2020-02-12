@@ -7,16 +7,36 @@ services:
       - --api.insecure
       - --providers.docker
       - --providers.docker.exposedByDefault=false
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+      - --certificatesResolvers.le.acme.email=${TK_ACME_EMAIL}
+      - --certificatesResolvers.le.acme.storage=/acme.json
+      - --certificatesResolvers.le.acme.httpChallenge.entryPoint=web
     image: traefik:v2.0.2
     ports:
       - "80:80"
-      - "8080:8080"
+      - "443:443"
     labels:
       - traefik.enable=true
-      - traefik.http.routers.traefik.rule=Host(`dashboard.gobarber.localhost`)
+      - traefik.http.routers.traefik.rule=Host(`${TK_HOST}`)
       - traefik.http.services.traefik.loadbalancer.server.port=8080
-    volumes:
+      - traefik.http.routers.traefik.service=api@internal
+      # HTTP
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=le
+      - traefik.http.routers.traefik.entrypoints=websecure
+      # AUTH
+      - traefik.http.middlewares.traefik-auth.basicauth.users=${TK_AUTH}
+      - traefik.http.routers.traefik.middlewares=traefik-auth
+      # MIDDLEWARE REDIRECT
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      # GLOBAL REDIRECT HTTP
+      - traefik.http.routers.redirs.rule=hostregexp(`{host:.+}`)
+      - traefik.http.routers.redirs.entrypoints=web
+      - traefik.http.routers.redirs.middleware=redirect-to-https
+      volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /home/acme.json:/acme.json
 
   postgres:
     container_name: postgres-gobarber
